@@ -159,7 +159,7 @@ class LoadsheetValidationChecks:
         else:
             return True
 
-    def validate_all_standard_field_names(df, ontology):
+    def validate_standard_field_names(df, ontology):
         """
         Ensures all standardFieldNames are valid telemetry fields within the DBO. 
         """
