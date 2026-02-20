@@ -1,6 +1,10 @@
 import re
 from typing import List, Optional
 
+FQ_FIELD_NAME = re.compile(
+    r'(^[a-z]+[a-z0-9]*(?:_[a-z]+[a-z0-9]*)*)((?:_[0-9]+)+)?$'
+)
+
 class LoadsheetValidationChecks:
     def __init__(self):
         pass
@@ -120,11 +124,6 @@ class LoadsheetValidationChecks:
         Ensures that the following fields are blank or non-blank for every row where 'required' = 'YES' and 'isMissing' = 'YES'.
         """
 
-        must_be_blank = [
-            "name", "type", "path",
-            "deviceId", "objectType", "objectId", "objectName"
-        ]
-
         must_not_be_blank = [
             "building", "generalType",
             "assetName", "standardFieldName"
@@ -140,12 +139,6 @@ class LoadsheetValidationChecks:
         for idx, row in filtered_df.iterrows():
             excel_row = idx + 2
             issues = []
-
-            # Check must-be-blank fields
-            for col in must_be_blank:
-                val = str(row.get(col, '')).strip()
-                if val and val.lower() != 'nan':
-                    issues.append(f"{col} should be blank (found '{val}')")
 
             # Check must-not-be-blank fields
             for col in must_not_be_blank:
@@ -380,38 +373,6 @@ class LoadsheetValidationChecks:
             return False
         return True
 
-    def validate_typename_matches_standard_fields(df, ontology):
-        """
-        Verifies that the set of standardFieldNames assigned to each assetName exactly matches 
-        the expected set defined in the ontology for the given typeName.
-        """
-        
-        required_yes = df[df['required_cleaned'] == 'YES']
-        grouped = required_yes.groupby('assetName')
-
-        failed_assets = []
-
-        for asset_name, group in grouped:
-            standard_fields = group['standardFieldName'].astype(str).str.strip().tolist()
-            type_name = group['typeName'].iloc[0]
-
-            if not CompareFieldsToSpecifiedType(ontology, True, type_name, standard_fields):
-                for idx in group.index:
-                    excel_row = idx + 2
-                    failed_assets.append((excel_row, asset_name, type_name))
-
-        if failed_assets:
-            print("❌ standardFieldNames do not 100% match typeName definitions:")
-            seen = set()
-            for row_num, asset, type_name in failed_assets:
-                seen_length = len(seen)
-                seen.add(asset)
-                if len(seen) > seen_length:
-                    print(f"assetName='{asset}', typeName='{type_name}'")
-            return False
-        else:
-            return True
-
     def validate_unique_typename_per_asset(df):
         """
         Ensures that each assetName maps to a single unique typeName. In other words, 
@@ -445,44 +406,6 @@ class LoadsheetValidationChecks:
             return False
         else:
             return True
-
-
-    def validate_required_flag_on_populated_rows(df):
-        """
-        Ensures that if any of the core identifying fields ('generalType', 'typeName', 'assetName',
-        or 'standardFieldName') are populated, then the 'required' column must be set to 'YES'.
-        """
-        
-        check_fields = ['generalType', 'typeName', 'standardFieldName']
-        failed_rows = []
-
-        for idx, row in df.iterrows():
-            required = str(row.get('required_cleaned', '')).strip().upper()
-
-            # Identify all fields that are non-empty and not 'nan'
-            non_blank_fields = {
-                field: str(row.get(field, '')).strip()
-                for field in check_fields
-                if str(row.get(field, '')).strip() and str(row.get(field, '')).strip().lower() != 'nan'
-            }
-
-            if non_blank_fields and required != 'YES':
-                # Use the first non-blank field for the error message
-                failing_field, value = next(iter(non_blank_fields.items()))
-                excel_row = idx + 2  # Excel-style row number
-                failed_rows.append((excel_row, failing_field, value, required))
-
-        if failed_rows:
-            print("❌ Rows with populated fields must have required='YES':")
-            for row_num, field, value, required in failed_rows:
-                print(f"Row {row_num}: {field}='{value}', required='{required}'")
-            return False
-        else:
-            return True
-
-FQ_FIELD_NAME = re.compile(
-    r'(^[a-z]+[a-z0-9]*(?:_[a-z]+[a-z0-9]*)*)((?:_[0-9]+)+)?$'
-)
 
 class StandardField(object):
   """A class to represent a generic field without increment or optionality.

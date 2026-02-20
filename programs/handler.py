@@ -536,16 +536,6 @@ class Handler:
             return
         else:
             print("✅ All necessary columns populated where required='YES' and isMissing='YES'.")
-        # if not LoadsheetValidationChecks.validate_all_standard_field_names(df_cleaned, self.ontology):
-        #     print("\n⛔ Stopping validation due to invalid standardFieldNames.")
-        #     return
-        # else:
-        #     print("✅ All standardFieldNames are valid.")
-        # if not LoadsheetValidationChecks.validate_units(df_cleaned, ontology):
-        #     print("\n⛔ Stopping validation due to undetectable units.")
-        #     return
-        # else:
-        #     print("✅ All units are valid and match with corresponding standardFieldNames.")
         if not LoadsheetValidationChecks.validate_object_type_for_command_status(df_cleaned):
             print("⛔ Stopping validation due to objectType mismatches for control/status points.")
             return
@@ -571,11 +561,5 @@ class Handler:
             return
         else:
             print("✅ All assetNames have exactly one typeName.")
-        # if not LoadsheetValidationChecks.validate_typename_matches_standard_fields(df_cleaned, ontology):
-        #     print("⛔ Stopping validation due to standardFieldName/typeName mismatches.")
-        #     return
-        # else:
-        #     print("✅ All standardFieldName sets are a 100% ontology match with their corresponding typeName.")
-
         self.validated = True
         print("\n🎉 All validations passed!")
